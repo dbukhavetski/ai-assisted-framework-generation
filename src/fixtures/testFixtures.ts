@@ -1,15 +1,20 @@
 import { test as base, expect } from '@playwright/test';
 
 import { BaseTest } from './BaseTest';
-import { PlaywrightHomePage } from '../pages/PlaywrightHomePage';
+import { InventoryPage } from '../pages/InventoryPage';
+import { LoginPage } from '../pages/LoginPage';
 
 type FrameworkFixtures = {
-  homePage: PlaywrightHomePage;
+  inventoryPage: InventoryPage;
+  loginPage: LoginPage;
 };
 
 const test = base.extend<FrameworkFixtures>({
-  homePage: async ({ page }, use) => {
-    await use(new PlaywrightHomePage(page));
+  loginPage: async ({ page }, use) => {
+    await use(new LoginPage(page));
+  },
+  inventoryPage: async ({ page }, use) => {
+    await use(new InventoryPage(page));
   },
 });
 

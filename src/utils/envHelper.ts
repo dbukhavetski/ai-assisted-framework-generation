@@ -57,7 +57,7 @@ export class EnvHelper {
     }
 
     return {
-      baseUrl: EnvHelper.getString('BASE_URL', 'https://playwright.dev'),
+      baseUrl: EnvHelper.getString('BASE_URL', 'https://www.saucedemo.com'),
       headless: EnvHelper.getBoolean('HEADLESS', true),
       browserName,
       defaultTimeout: EnvHelper.getNumber('DEFAULT_TIMEOUT', 30_000),

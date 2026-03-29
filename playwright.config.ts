@@ -23,6 +23,7 @@ export default defineConfig({
   use: {
     baseURL: environment.baseUrl,
     headless: environment.headless,
+    testIdAttribute: 'data-test',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
