@@ -30,6 +30,13 @@ export class InventoryPage extends BasePage {
   }
 
   /**
+   * Adds the Sauce Labs Bike Light item to the cart.
+   */
+  public async addBikeLightToCart(): Promise<void> {
+    await this.getAddBikeLightButton().click();
+  }
+
+  /**
    * Verifies the backpack item is present in the product list.
    */
   public async expectBackpackVisible(): Promise<void> {
@@ -42,6 +49,10 @@ export class InventoryPage extends BasePage {
 
   private getAddBackpackButton() {
     return this.getByTestId('add-to-cart-sauce-labs-backpack');
+  }
+
+  private getAddBikeLightButton() {
+    return this.getByTestId('add-to-cart-sauce-labs-bike-light');
   }
 
   private getBackpackName() {
