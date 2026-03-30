@@ -11,7 +11,7 @@ test.describe('Sauce Demo authentication', () => {
 
     await expect(page).toHaveURL(/.*inventory.html/);
     await inventoryPage.expectLoaded();
-    await inventoryPage.expectBackpackVisible();
+    await inventoryPage.expectItemVisible('Sauce Labs Backpack');
   });
 
   test('adds the backpack to the cart after login', async ({ page, authenticatedInventoryPage }) => {

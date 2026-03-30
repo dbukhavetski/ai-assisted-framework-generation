@@ -3,13 +3,6 @@ import { expect, type Page } from '@playwright/test';
 import { InventoryHeaderComponent } from '../components/InventoryHeaderComponent';
 import { BasePage } from './BasePage';
 
-type InventoryItem = 'Sauce Labs Backpack' | 'Sauce Labs Bike Light';
-
-const addToCartButtonTestIds: Record<InventoryItem, string> = {
-  'Sauce Labs Backpack': 'add-to-cart-sauce-labs-backpack',
-  'Sauce Labs Bike Light': 'add-to-cart-sauce-labs-bike-light',
-};
-
 /**
  * Models the Sauce Demo inventory page after authentication.
  */
@@ -32,26 +25,30 @@ export class InventoryPage extends BasePage {
   /**
    * Adds an inventory item to the cart.
    */
-  public async addItemToCart(itemName: InventoryItem): Promise<void> {
+  public async addItemToCart(itemName: string): Promise<void> {
     await this.getAddToCartButton(itemName).click();
   }
 
   /**
-   * Verifies the backpack item is present in the product list.
+   * Verifies the supplied inventory item is present in the product list.
    */
-  public async expectBackpackVisible(): Promise<void> {
-    await expect(this.getBackpackName()).toBeVisible();
+  public async expectItemVisible(itemName: string): Promise<void> {
+    await expect(this.getInventoryItem(itemName)).toBeVisible();
   }
 
   private getInventoryContainer() {
     return this.getByTestId('inventory-container');
   }
 
-  private getAddToCartButton(itemName: InventoryItem) {
-    return this.getByTestId(addToCartButtonTestIds[itemName]);
+  private getAddToCartButton(itemName: string) {
+    return this.getInventoryItem(itemName).getByTestId(`add-to-cart-${this.toInventorySlug(itemName)}`);
   }
 
-  private getBackpackName() {
-    return this.getByTestId('item-4-title-link');
+  private getInventoryItem(itemName: string) {
+    return this.getInventoryContainer().getByTestId('inventory-item').filter({ hasText: itemName });
+  }
+
+  private toInventorySlug(itemName: string) {
+    return itemName.trim().toLowerCase().replace(/\s+/g, '-');
   }
 }
