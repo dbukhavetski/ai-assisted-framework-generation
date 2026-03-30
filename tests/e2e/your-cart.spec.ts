@@ -7,8 +7,8 @@ const cartItems = ['Sauce Labs Backpack', 'Sauce Labs Bike Light'];
  */
 test.describe('Sauce Demo your cart', () => {
   test('adds items to the cart and verifies the cart list', async ({ authenticatedInventoryPage, yourCartPage }) => {
-    await authenticatedInventoryPage.addBackpackToCart();
-    await authenticatedInventoryPage.addBikeLightToCart();
+    await authenticatedInventoryPage.addItemToCart('Sauce Labs Backpack');
+    await authenticatedInventoryPage.addItemToCart('Sauce Labs Bike Light');
     await yourCartPage.open();
     await yourCartPage.verifyCartList(cartItems);
   });

@@ -15,7 +15,7 @@ test.describe('Sauce Demo authentication', () => {
   });
 
   test('adds the backpack to the cart after login', async ({ page, authenticatedInventoryPage }) => {
-    await authenticatedInventoryPage.addBackpackToCart();
+    await authenticatedInventoryPage.addItemToCart('Sauce Labs Backpack');
     await authenticatedInventoryPage.header.expectCartBadgeCount(1);
     await authenticatedInventoryPage.header.openCart();
 
