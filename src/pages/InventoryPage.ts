@@ -31,6 +31,15 @@ export class InventoryPage extends BasePage {
   }
 
   /**
+   * Returns the displayed price for an inventory item.
+   */
+  public async getItemPrice(itemName: string): Promise<number> {
+    const priceText = await this.getInventoryItemPrice(itemName).innerText();
+
+    return this.parsePrice(priceText);
+  }
+
+  /**
    * Orders inventory items by price from low to high.
    */
   public async sortItemsByPriceLowToHigh(): Promise<void> {
@@ -73,6 +82,10 @@ export class InventoryPage extends BasePage {
 
   private getInventoryItemPrices() {
     return this.getInventoryContainer().getByTestId('inventory-item-price');
+  }
+
+  private getInventoryItemPrice(itemName: string) {
+    return this.getInventoryItem(itemName).getByTestId('inventory-item-price');
   }
 
   private parsePrice(priceText: string) {

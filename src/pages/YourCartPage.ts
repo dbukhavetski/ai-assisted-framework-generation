@@ -11,6 +11,13 @@ export class YourCartPage extends BasePage {
   }
 
   /**
+   * Verifies that the cart page is displayed.
+   */
+  public async expectLoaded(): Promise<void> {
+    await expect(this.getCartList()).toBeVisible();
+  }
+
+  /**
    * Opens the Sauce Demo cart page.
    */
   public async open(): Promise<void> {
@@ -29,11 +36,22 @@ export class YourCartPage extends BasePage {
     }
   }
 
+  /**
+   * Starts the checkout flow from the cart page.
+   */
+  public async proceedToCheckout(): Promise<void> {
+    await this.getCheckoutButton().click();
+  }
+
   private getCartList() {
     return this.getByTestId('cart-list');
   }
 
   private getCartItemLink(itemName: string) {
     return this.getByRole('link', { name: itemName });
+  }
+
+  private getCheckoutButton() {
+    return this.getByTestId('checkout');
   }
 }

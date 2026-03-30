@@ -1,6 +1,8 @@
 import { test as base, expect } from '@playwright/test';
 
 import { BaseTest } from './BaseTest';
+import { CheckoutOverviewPage } from '../pages/CheckoutOverviewPage';
+import { CheckoutYourInformationPage } from '../pages/CheckoutYourInformationPage';
 import { InventoryPage } from '../pages/InventoryPage';
 import { LoginPage } from '../pages/LoginPage';
 import { YourCartPage } from '../pages/YourCartPage';
@@ -12,6 +14,8 @@ interface SauceDemoUser {
 
 type FrameworkFixtures = {
   authenticatedInventoryPage: InventoryPage;
+  checkoutOverviewPage: CheckoutOverviewPage;
+  checkoutYourInformationPage: CheckoutYourInformationPage;
   inventoryPage: InventoryPage;
   loginPage: LoginPage;
   standardUser: SauceDemoUser;
@@ -31,6 +35,12 @@ const test = base.extend<FrameworkFixtures>({
     await loginPage.login(standardUser.username, standardUser.password);
     await inventoryPage.expectLoaded();
     await use(inventoryPage);
+  },
+  checkoutYourInformationPage: async ({ page }, use) => {
+    await use(new CheckoutYourInformationPage(page));
+  },
+  checkoutOverviewPage: async ({ page }, use) => {
+    await use(new CheckoutOverviewPage(page));
   },
   yourCartPage: async ({ page }, use) => {
     await use(new YourCartPage(page));
