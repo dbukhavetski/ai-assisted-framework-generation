@@ -11,6 +11,7 @@ interface SauceDemoUser {
 }
 
 type FrameworkFixtures = {
+  authenticatedInventoryPage: InventoryPage;
   inventoryPage: InventoryPage;
   loginPage: LoginPage;
   standardUser: SauceDemoUser;
@@ -23,6 +24,13 @@ const test = base.extend<FrameworkFixtures>({
   },
   inventoryPage: async ({ page }, use) => {
     await use(new InventoryPage(page));
+  },
+  authenticatedInventoryPage: async ({ inventoryPage, loginPage, standardUser }, use) => {
+    await loginPage.open();
+    await loginPage.expectLoaded();
+    await loginPage.login(standardUser.username, standardUser.password);
+    await inventoryPage.expectLoaded();
+    await use(inventoryPage);
   },
   yourCartPage: async ({ page }, use) => {
     await use(new YourCartPage(page));
