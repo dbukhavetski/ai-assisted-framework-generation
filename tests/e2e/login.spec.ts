@@ -3,7 +3,7 @@ import { test, expect } from '../../src/fixtures/testFixtures';
 /**
  * Covers the primary authentication flow for Sauce Demo.
  */
-test.describe('Sauce Demo authentication', () => {
+test.describe('Authentication', () => {
   test('opens login, submits valid credentials, and shows inventory items', async ({ page, loginPage, inventoryPage, standardUser }) => {
     await loginPage.open();
     await loginPage.expectLoaded();
