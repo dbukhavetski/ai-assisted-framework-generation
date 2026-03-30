@@ -8,6 +8,7 @@ import { BasePage } from './BasePage';
  */
 export class InventoryPage extends BasePage {
   public readonly header: InventoryHeaderComponent;
+  private static readonly PRICE_LOW_TO_HIGH_OPTION = 'lohi';
 
   constructor(page: Page) {
     super(page);
@@ -30,14 +31,36 @@ export class InventoryPage extends BasePage {
   }
 
   /**
+   * Orders inventory items by price from low to high.
+   */
+  public async sortItemsByPriceLowToHigh(): Promise<void> {
+    await this.getSortDropdown().selectOption(InventoryPage.PRICE_LOW_TO_HIGH_OPTION);
+  }
+
+  /**
    * Verifies the supplied inventory item is present in the product list.
    */
   public async expectItemVisible(itemName: string): Promise<void> {
     await expect(this.getInventoryItem(itemName)).toBeVisible();
   }
 
+  /**
+   * Verifies that the first displayed inventory item has the lowest price.
+   */
+  public async expectFirstItemToBeCheapest(): Promise<void> {
+    const priceTexts = await this.getInventoryItemPrices().allInnerTexts();
+    const prices = priceTexts.map((priceText) => this.parsePrice(priceText));
+    const lowestPrice = Math.min(...prices);
+
+    expect(prices[0]).toBe(lowestPrice);
+  }
+
   private getInventoryContainer() {
     return this.getByTestId('inventory-container');
+  }
+
+  private getSortDropdown() {
+    return this.getByTestId('product-sort-container');
   }
 
   private getAddToCartButton(itemName: string) {
@@ -46,6 +69,14 @@ export class InventoryPage extends BasePage {
 
   private getInventoryItem(itemName: string) {
     return this.getInventoryContainer().getByTestId('inventory-item').filter({ hasText: itemName });
+  }
+
+  private getInventoryItemPrices() {
+    return this.getInventoryContainer().getByTestId('inventory-item-price');
+  }
+
+  private parsePrice(priceText: string) {
+    return Number.parseFloat(priceText.replace('$', ''));
   }
 
   private toInventorySlug(itemName: string) {
