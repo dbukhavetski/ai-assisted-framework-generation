@@ -34,26 +34,7 @@ jobs:
 
       - name: Run dependency vulnerability scan
         continue-on-error: false
-        run: |
-          set +e
-          yarn npm audit --severity high > yarn-audit.txt 2>&1
-          audit_exit_code=$?
-
-          {
-            echo "## Security Scan"
-            echo
-            if [ "$audit_exit_code" -eq 0 ]; then
-              echo "No high or critical vulnerabilities found."
-            else
-              echo "High or critical vulnerabilities were detected by yarn npm audit --severity high."
-              echo
-              echo '```text'
-              head -n 80 yarn-audit.txt
-              echo '```'
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          exit "$audit_exit_code"
+        run: bash .github/scripts/run-security-scan.sh
 
   playwright-tests:
     name: playwright-tests
@@ -121,41 +102,7 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           BRANCH_NAME: ${{ github.head_ref }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import urllib.request
-
-          payload = {
-              '@type': 'MessageCard',
-              '@context': 'https://schema.org/extensions',
-              'summary': 'Playwright Tests failed',
-              'themeColor': 'D13438',
-              'title': 'Playwright Tests failed',
-              'sections': [
-                  {
-                      'facts': [
-                          {'name': 'Pull request title', 'value': os.environ['PR_TITLE']},
-                          {'name': 'PR author', 'value': os.environ['PR_AUTHOR']},
-                          {'name': 'Branch name', 'value': os.environ['BRANCH_NAME']},
-                          {'name': 'Workflow run', 'value': os.environ['WORKFLOW_RUN_URL']},
-                      ],
-                      'markdown': True,
-                  }
-              ],
-          }
-
-          request = urllib.request.Request(
-              os.environ['TEAMS_WEBHOOK_URL'],
-              data=json.dumps(payload).encode('utf-8'),
-              headers={'Content-Type': 'application/json'},
-          )
-
-          with urllib.request.urlopen(request) as response:
-              if response.status >= 400:
-                  raise RuntimeError(f'Teams webhook failed with status {response.status}')
-          PY
+          run: python3 .github/scripts/notify-teams-on-failure.py
 
       - name: Prepare GitHub Pages history
         if: always() && github.ref == 'refs/heads/main'
@@ -174,112 +121,7 @@ jobs:
             rm -rf pages-history
           fi
 
-          node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-
-          const reportDir = path.join(process.cwd(), 'playwright-report');
-          const historyOutputPath = path.join(reportDir, 'history.json');
-          const historyCandidates = [
-            path.join(process.cwd(), 'pages-history', 'history.json'),
-            path.join(process.cwd(), 'pages-history', 'playwright-report', 'history.json'),
-          ];
-
-          const reportSummaryCandidates = [
-            path.join(reportDir, 'data', 'testResult.json'),
-            path.join(reportDir, 'data', 'test-result.json'),
-            path.join(reportDir, 'data', 'report.json'),
-            path.join(reportDir, 'report.json'),
-          ];
-
-          function readJsonIfExists(filePath) {
-            if (!fs.existsSync(filePath)) {
-              return null;
-            }
-
-            try {
-              return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-            } catch {
-              return null;
-            }
-          }
-
-          function findStats(value, depth = 0) {
-            if (!value || depth > 6) {
-              return null;
-            }
-
-            if (Array.isArray(value)) {
-              for (const item of value) {
-                const stats = findStats(item, depth + 1);
-                if (stats) {
-                  return stats;
-                }
-              }
-              return null;
-            }
-
-            if (typeof value !== 'object') {
-              return null;
-            }
-
-            const keys = Object.keys(value);
-            const hasInterestingKeys = ['passed', 'failed', 'skipped', 'flaky', 'expected', 'unexpected'].some((key) => keys.includes(key));
-            if (hasInterestingKeys) {
-              return value;
-            }
-
-            for (const nestedValue of Object.values(value)) {
-              const stats = findStats(nestedValue, depth + 1);
-              if (stats) {
-                return stats;
-              }
-            }
-
-            return null;
-          }
-
-          let history = [];
-          for (const candidate of historyCandidates) {
-            const parsed = readJsonIfExists(candidate);
-            if (Array.isArray(parsed)) {
-              history = parsed;
-              break;
-            }
-          }
-
-          let counts = null;
-          for (const candidate of reportSummaryCandidates) {
-            const parsed = readJsonIfExists(candidate);
-            const stats = findStats(parsed);
-            if (stats) {
-              counts = {
-                passed: stats.passed ?? stats.expected ?? null,
-                failed: stats.failed ?? stats.unexpected ?? null,
-                skipped: stats.skipped ?? null,
-                flaky: stats.flaky ?? null,
-              };
-              break;
-            }
-          }
-
-          const entry = {
-            timestamp: new Date().toISOString(),
-            runUrl: process.env.RUN_URL,
-            commitSha: process.env.GITHUB_SHA,
-            ref: process.env.GITHUB_REF,
-            branch: process.env.GITHUB_REF_NAME,
-            jobConclusion: process.env.JOB_CONCLUSION,
-            testOutcome: process.env.TEST_STEP_OUTCOME,
-          };
-
-          if (counts && Object.values(counts).some((value) => value !== null)) {
-            entry.counts = counts;
-          }
-
-          history.push(entry);
-          fs.writeFileSync(historyOutputPath, JSON.stringify(history, null, 2) + '\n');
-          NODE
+          node .github/scripts/prepare-pages-history.js
 
       - name: Upload GitHub Pages artifact
         if: always() && github.ref == 'refs/heads/main'
