@@ -63,3 +63,47 @@ jobs:
             test-results/**/trace*.zip
             test-results/**/traces/**
           if-no-files-found: error
+
+      - name: Notify Microsoft Teams on failure
+        if: failure()
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          BRANCH_NAME: ${{ github.head_ref }}
+          WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          payload = {
+              '@type': 'MessageCard',
+              '@context': 'https://schema.org/extensions',
+              'summary': 'Playwright Tests failed',
+              'themeColor': 'D13438',
+              'title': 'Playwright Tests failed',
+              'sections': [
+                  {
+                      'facts': [
+                          {'name': 'Pull request title', 'value': os.environ['PR_TITLE']},
+                          {'name': 'PR author', 'value': os.environ['PR_AUTHOR']},
+                          {'name': 'Branch name', 'value': os.environ['BRANCH_NAME']},
+                          {'name': 'Workflow run', 'value': os.environ['WORKFLOW_RUN_URL']},
+                      ],
+                      'markdown': True,
+                  }
+              ],
+          }
+
+          request = urllib.request.Request(
+              os.environ['TEAMS_WEBHOOK_URL'],
+              data=json.dumps(payload).encode('utf-8'),
+              headers={'Content-Type': 'application/json'},
+          )
+
+          with urllib.request.urlopen(request) as response:
+              if response.status >= 400:
+                  raise RuntimeError(f'Teams webhook failed with status {response.status}')
+          PY
