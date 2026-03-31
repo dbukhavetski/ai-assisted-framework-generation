@@ -19,7 +19,9 @@ export class InventoryPage extends BasePage {
    * Verifies that the inventory page is displayed.
    */
   public async expectLoaded(): Promise<void> {
-    await this.page.waitForTimeout(3000);
+    await this.waitForPageReady();
+    await expect(this.getInventoryContainer()).toBeVisible();
+    await expect(this.getInventoryItems().first()).toBeVisible();
     await this.header.expectProductsTitle();
   }
 
@@ -54,14 +56,15 @@ export class InventoryPage extends BasePage {
   }
 
   /**
-   * Verifies that the first displayed inventory item has the lowest price.
+   * Verifies that displayed inventory items are sorted by ascending price.
    */
-  public async expectFirstItemToBeCheapest(): Promise<void> {
+  public async expectItemsSortedByPriceLowToHigh(): Promise<void> {
     const priceTexts = await this.getInventoryItemPrices().allInnerTexts();
     const prices = priceTexts.map((priceText) => this.parsePrice(priceText));
-    const lowestPrice = Math.min(...prices);
+    const sortedPrices = [...prices].sort((left, right) => left - right);
 
-    expect(prices[0]).toBe(lowestPrice);
+    expect(prices.length).toBeGreaterThan(0);
+    expect(prices).toEqual(sortedPrices);
   }
 
   private getInventoryContainer() {
@@ -76,12 +79,16 @@ export class InventoryPage extends BasePage {
     return this.getInventoryItem(itemName).getByTestId(`add-to-cart-${this.toInventorySlug(itemName)}`);
   }
 
+  private getInventoryItems() {
+    return this.getInventoryContainer().getByTestId('inventory-item');
+  }
+
   private getInventoryItem(itemName: string) {
-    return this.getInventoryContainer().getByTestId('inventory-item').filter({ hasText: itemName });
+    return this.getInventoryItems().filter({ hasText: itemName });
   }
 
   private getInventoryItemPrices() {
-    return this.getInventoryContainer().locator('.inventory-item-price');
+    return this.getInventoryItems().getByTestId('inventory-item-price');
   }
 
   private getInventoryItemPrice(itemName: string) {
