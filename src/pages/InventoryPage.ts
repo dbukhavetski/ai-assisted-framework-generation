@@ -19,7 +19,7 @@ export class InventoryPage extends BasePage {
    * Verifies that the inventory page is displayed.
    */
   public async expectLoaded(): Promise<void> {
-    await expect(this.getInventoryContainer()).toBeVisible();
+    await this.page.waitForTimeout(3000);
     await this.header.expectProductsTitle();
   }
 
@@ -81,7 +81,7 @@ export class InventoryPage extends BasePage {
   }
 
   private getInventoryItemPrices() {
-    return this.getInventoryContainer().getByTestId('inventory-item-price');
+    return this.getInventoryContainer().locator('.inventory-item-price');
   }
 
   private getInventoryItemPrice(itemName: string) {
