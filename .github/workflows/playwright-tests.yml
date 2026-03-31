@@ -12,6 +12,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  security-scan:
+    name: security-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Run dependency vulnerability scan
+        continue-on-error: false
+        run: |
+          set +e
+          yarn npm audit --severity high > yarn-audit.txt 2>&1
+          audit_exit_code=$?
+
+          {
+            echo "## Security Scan"
+            echo
+            if [ "$audit_exit_code" -eq 0 ]; then
+              echo "No high or critical vulnerabilities found."
+            else
+              echo "High or critical vulnerabilities were detected by yarn npm audit --severity high."
+              echo
+              echo '```text'
+              head -n 80 yarn-audit.txt
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$audit_exit_code"
+
   playwright-tests:
     name: playwright-tests
     runs-on: ubuntu-latest
