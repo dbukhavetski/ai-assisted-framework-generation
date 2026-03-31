@@ -2,7 +2,7 @@
 
 ## Current state
 
-- Runtime check: `npm run test:e2e -- --reporter=list`
+- Runtime check: `yarn test:e2e --reporter=list`
 - Result: 6/6 specs passed.
 - Broken selectors found: none in the current Sauce Demo build. The page objects consistently use `data-test` selectors and the suite is green.
 
