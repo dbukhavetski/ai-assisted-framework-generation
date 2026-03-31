@@ -12,27 +12,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  playwright-tests:
-    name: playwright-tests
+  security-scan:
+    name: security-scan
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       CI: true
 
     steps:
-      # Check out the pull request source.
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Set up the latest LTS version of Node.js and enable Yarn caching.
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
           cache: yarn
 
-      # Install dependencies while enforcing the lockfile, but allow a clean CI runner
-      # to populate the Yarn cache on first use.
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Run dependency vulnerability scan
+        continue-on-error: false
+        run: bash .github/scripts/run-security-scan.sh
+
+  playwright-tests:
+    name: playwright-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment: github-pages
+    env:
+      CI: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: yarn
+
       - name: Install dependencies
         run: yarn install --immutable
 
@@ -42,6 +67,7 @@ jobs:
 
       # Run the Playwright test suite in CI.
       - name: Run Playwright tests
+        id: run-playwright-tests
         run: yarn playwright test
 
       # Always upload the HTML report for inspection.
@@ -72,38 +98,33 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           BRANCH_NAME: ${{ github.head_ref }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          run: python3 .github/scripts/notify-teams-on-failure.py
+
+      - name: Prepare GitHub Pages history
+        if: always() && github.ref == 'refs/heads/main'
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          JOB_CONCLUSION: ${{ job.status }}
+          TEST_STEP_OUTCOME: ${{ steps.run-playwright-tests.outcome }}
         run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import urllib.request
+          mkdir -p playwright-report
 
-          payload = {
-              '@type': 'MessageCard',
-              '@context': 'https://schema.org/extensions',
-              'summary': 'Playwright Tests failed',
-              'themeColor': 'D13438',
-              'title': 'Playwright Tests failed',
-              'sections': [
-                  {
-                      'facts': [
-                          {'name': 'Pull request title', 'value': os.environ['PR_TITLE']},
-                          {'name': 'PR author', 'value': os.environ['PR_AUTHOR']},
-                          {'name': 'Branch name', 'value': os.environ['BRANCH_NAME']},
-                          {'name': 'Workflow run', 'value': os.environ['WORKFLOW_RUN_URL']},
-                      ],
-                      'markdown': True,
-                  }
-              ],
-          }
+          if git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
+            git fetch --depth=1 origin gh-pages
+            rm -rf pages-history
+            git worktree add --detach pages-history FETCH_HEAD
+          else
+            rm -rf pages-history
+          fi
 
-          request = urllib.request.Request(
-              os.environ['TEAMS_WEBHOOK_URL'],
-              data=json.dumps(payload).encode('utf-8'),
-              headers={'Content-Type': 'application/json'},
-          )
+          node .github/scripts/prepare-pages-history.js
 
-          with urllib.request.urlopen(request) as response:
-              if response.status >= 400:
-                  raise RuntimeError(f'Teams webhook failed with status {response.status}')
-          PY
+      - name: Upload GitHub Pages artifact
+        if: always() && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: playwright-report/
+
+      - name: Deploy to GitHub Pages
+        if: always() && github.ref == 'refs/heads/main'
+        uses: actions/deploy-pages@v4
