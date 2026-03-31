@@ -33,6 +33,16 @@ export class InventoryPage extends BasePage {
   }
 
   /**
+   * Adds multiple inventory items to the cart and verifies the badge count after each add.
+   */
+  public async addItemsToCart(itemNames: string[]): Promise<void> {
+    for (const [index, itemName] of itemNames.entries()) {
+      await this.addItemToCart(itemName);
+      await this.header.expectCartBadgeCount(index + 1);
+    }
+  }
+
+  /**
    * Returns the displayed price for an inventory item.
    */
   public async getItemPrice(itemName: string): Promise<number> {
