@@ -31,9 +31,10 @@ jobs:
           node-version: lts/*
           cache: yarn
 
-      # Install project dependencies using the lockfile and cache constraints.
+      # Install dependencies while enforcing the lockfile, but allow a clean CI runner
+      # to populate the Yarn cache on first use.
       - name: Install dependencies
-        run: yarn install --immutable --immutable-cache --check-cache
+        run: yarn install --immutable
 
       # Install Playwright browsers and required system dependencies.
       - name: Install Playwright browsers
