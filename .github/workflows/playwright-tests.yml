@@ -49,19 +49,15 @@ jobs:
       CI: true
 
     steps:
-      # Check out the pull request source.
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Set up the latest LTS version of Node.js and enable Yarn caching.
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
           cache: yarn
 
-      # Install dependencies while enforcing the lockfile, but allow a clean CI runner
-      # to populate the Yarn cache on first use.
       - name: Install dependencies
         run: yarn install --immutable
 
