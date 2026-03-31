@@ -98,7 +98,7 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           BRANCH_NAME: ${{ github.head_ref }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          run: python3 .github/scripts/notify-teams-on-failure.py
+        run: python3 .github/scripts/notify-teams-on-failure.py
 
       - name: Prepare GitHub Pages history
         if: always() && github.ref == 'refs/heads/main'
