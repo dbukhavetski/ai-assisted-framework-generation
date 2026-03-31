@@ -53,13 +53,13 @@ jobs:
           path: playwright-report
           if-no-files-found: warn
 
-      # Always upload Playwright traces captured during test execution.
+      # Upload Playwright traces only when failed tests produced them.
       - name: Upload Playwright traces
-        if: always()
+        if: always() && hashFiles('test-results/**/trace*.zip', 'test-results/**/traces/**/*') != ''
         uses: actions/upload-artifact@v4
         with:
           name: playwright-traces
           path: |
             test-results/**/trace*.zip
             test-results/**/traces/**
-          if-no-files-found: warn
+          if-no-files-found: error
