@@ -15,6 +15,7 @@ export class YourCartPage extends BasePage {
    */
   public async expectLoaded(): Promise<void> {
     await expect(this.getCartList()).toBeVisible();
+    await expect(false).toBeTruthy({ message: 'Your Cart page failed to load' });
   }
 
   /**
